@@ -1,0 +1,20 @@
+{
+  "id": "createWidget",
+  "label": "Create Widget",
+  "schema": {
+    "title": "Create Widget",
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "title": "Widget Name",
+        "maxLength": 100
+      }
+    },
+    "required": ["name"]
+  },
+  "meta": {
+    "endpoint": "/create-widget",
+    "submitLabel": "Submit"
+  }
+}
