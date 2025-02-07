@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 )
 
-// Widget represents the expected JSON payload.
+// Widget represents the JSON payload for creating a widget.
 type Widget struct {
 	Name string `json:"name"`
 }
 
-// createWidgetHandler processes POST requests to "/create-widget".
+// createWidgetHandler handles POST requests to "/create-widget".
 func createWidgetHandler(w http.ResponseWriter, r *http.Request) {
 	// Ensure the request method is POST.
 	if r.Method != http.MethodPost {
@@ -21,15 +21,14 @@ func createWidgetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Decode the JSON request body into a Widget struct.
+	// Decode the JSON request body.
 	var widget Widget
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&widget); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&widget); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	// Ensure the name field is provided.
+	// Check that the name field is provided.
 	if widget.Name == "" {
 		http.Error(w, "Missing widget name", http.StatusBadRequest)
 		return
@@ -40,30 +39,58 @@ func createWidgetHandler(w http.ResponseWriter, r *http.Request) {
 		"message": fmt.Sprintf("Created %s", widget.Name),
 	}
 
-	// Set the header to indicate JSON response.
+	// Return the JSON response.
 	w.Header().Set("Content-Type", "application/json")
-	// Write the JSON response.
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	}
+}
+
+// searchListHandler handles POST requests to "/search-list".
+// It expects a JSON body with an "id" field and returns a hard-coded array [1,2,...,10].
+func searchListHandler(w http.ResponseWriter, r *http.Request) {
+	// Ensure the request method is POST.
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Define a struct to decode the incoming JSON request.
+	var req struct {
+		ID int `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Create a hard-coded array with numbers 1 to 10.
+	result := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+
+	// Build the response with the key "result".
+	response := map[string]interface{}{
+		"result": result,
+	}
+
+	// Return the JSON response.
+	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
 
 func main() {
-	// Handle the widget creation endpoint.
+	// Register endpoint handlers.
 	http.HandleFunc("/create-widget", createWidgetHandler)
+	http.HandleFunc("/search-list", searchListHandler)
 
 	// Serve the index.html file when the root path is requested.
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Use filepath.Join to support different OS path separators.
 		http.ServeFile(w, r, filepath.Join("static", "index.html"))
 	})
 
 	// Serve the JavaScript file.
-	// When a request is made to "/app.js", serve the file from the "static" directory.
 	http.Handle("/bundle.js", http.FileServer(http.Dir("./static")))
-
-	// Optionally, if you have additional static assets (CSS, images, etc.), you could serve them under a /static/ path:
-	// http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	log.Println("Server is running on port 8080...")
 	if err := http.ListenAndServe(":8080", nil); err != nil {

@@ -1,0 +1,25 @@
+{
+  "id": "searchList",
+  "label": "Search List",
+  "schema": {
+    "title": "Search List",
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "number",
+        "title": "ID"
+      }
+    },
+    "required": ["id"]
+  },
+  "meta": {
+    "endpoint": "/search-list",
+    "submitLabel": "Search",
+    "requestMapping": {
+      "id": "id"
+    },
+    "responseMapping": {
+      "results": "result"
+    }
+  }
+}
