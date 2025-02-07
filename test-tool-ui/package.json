@@ -1,7 +1,7 @@
 {
   "name": "my-widget-app",
   "version": "1.0.0",
-  "description": "Modular Widget Creator using Uniforms driven by JSON schema",
+  "description": "Modular Widget Creator driven by JSON schemas",
   "scripts": {
     "start": "webpack serve --mode development --open",
     "build": "NODE_ENV=production webpack --mode production"
