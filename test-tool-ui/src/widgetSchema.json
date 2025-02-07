@@ -1,0 +1,12 @@
+{
+  "title": "Create Widget",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Widget Name",
+      "maxLength": 100
+    }
+  },
+  "required": ["name"]
+}
