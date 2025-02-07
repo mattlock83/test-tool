@@ -21,6 +21,13 @@
   },
   "meta": {
     "endpoint": "/create-thing",
-    "submitLabel": "Submit"
+    "submitLabel": "Submit",
+    "requestMapping": {
+      "firstname": "firstName",
+      "phone": "phoneNumber"
+    },
+    "responseMapping": {
+      "message": "customMessage"
+    }
   }
 }

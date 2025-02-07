@@ -10,7 +10,7 @@ function makeValidator(schema) {
   return (model) => {
     const valid = validate(model);
     if (!valid) {
-      const errors = validate.errors.map((err) => ({
+      const errors = validate.errors.map(err => ({
         name: err.instancePath || err.dataPath || "field",
         message: err.message
       }));
@@ -19,18 +19,6 @@ function makeValidator(schema) {
   };
 }
 
-/**
- * GenericModuleForm renders an AutoForm that is entirely generated
- * from the module's JSON schema and meta data.
- * 
- * The configuration object (config) is expected to have:
- * - id: unique module id.
- * - label: module display label.
- * - schema: a JSON schema (for form generation).
- * - meta: an object with at least:
- *      - endpoint: the URL to POST the form data.
- *      - (optionally) any other meta data.
- */
 export default function GenericModuleForm({ config }) {
   const [responseMessage, setResponseMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -38,22 +26,40 @@ export default function GenericModuleForm({ config }) {
   const validatorFn = makeValidator(config.schema);
   const schemaBridge = new JSONSchemaBridge(config.schema, validatorFn);
 
+  // Remap the data if a requestMapping is provided
+  const mapRequestData = (data) => {
+    if (config.meta.requestMapping) {
+      const mapped = {};
+      for (const key in config.meta.requestMapping) {
+        // Use the mapping: form key -> endpoint key
+        mapped[config.meta.requestMapping[key]] = data[key];
+      }
+      return mapped;
+    }
+    return data;
+  };
+
   const handleSubmit = async (data) => {
-    // Clear previous messages.
     setResponseMessage("");
     setErrorMessage("");
+
+    const requestData = mapRequestData(data);
 
     try {
       const response = await fetch(config.meta.endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body: JSON.stringify(requestData)
       });
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
       const result = await response.json();
-      setResponseMessage(result.message);
+      // Determine the key to display from response mapping (default: "message")
+      const messageKey =
+        (config.meta.responseMapping && config.meta.responseMapping.message) ||
+        "message";
+      setResponseMessage(result[messageKey]);
     } catch (error) {
       console.error(`Error in module ${config.id}:`, error);
       setErrorMessage("Failed to create");
@@ -63,10 +69,7 @@ export default function GenericModuleForm({ config }) {
   return (
     <div>
       <h2>{config.label}</h2>
-      {/* 
-          Do not supply children to AutoForm. This lets it auto‑generate 
-          all input fields based on the JSON schema.
-      */}
+      {/* Do not provide children so that AutoForm auto-generates fields */}
       <AutoForm schema={schemaBridge} onSubmit={handleSubmit} />
       {responseMessage && (
         <div className="alert alert-success mt-3">{responseMessage}</div>

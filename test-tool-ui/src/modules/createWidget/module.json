@@ -15,6 +15,12 @@
   },
   "meta": {
     "endpoint": "/create-widget",
-    "submitLabel": "Submit"
+    "submitLabel": "Submit",
+    "requestMapping": {
+      "name": "name"
+    },
+    "responseMapping": {
+      "message": "message"
+    }
   }
 }

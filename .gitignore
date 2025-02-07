@@ -1,3 +1,6 @@
 
 .DS_Store
 node_modules
+test-tool-ui/dist/bundle.js
+test-tool-ui/dist/bundle.js.LICENSE.txt
+test-tool-ui/dist/index.html
