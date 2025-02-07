@@ -1,44 +1,48 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
-import { AutoForm, TextField, ErrorsField, SubmitField } from "uniforms-bootstrap5";
+import { AutoForm, SubmitField, ErrorsField } from "uniforms-bootstrap5";
 import { JSONSchemaBridge } from "uniforms-bridge-json-schema";
-import schema from "./widgetSchema.json";
+import Ajv from "ajv";
+import { modules } from "./modulesConfig";
 
-// A simple validator function for the Uniforms form.
-function validator(model) {
-  const errors = [];
-  if (!model.name || model.name.trim() === "") {
-    errors.push({ name: "name", message: "Name is required" });
-  }
-  if (model.name && model.name.length > 100) {
-    errors.push({ name: "name", message: "Name must be at most 100 characters" });
-  }
-  if (errors.length) {
-    throw { details: errors };
-  }
+// Create a generic validator function using AJV.
+const ajv = new Ajv({ allErrors: true, useDefaults: true });
+function makeValidator(schema) {
+  const validate = ajv.compile(schema);
+  return (model) => {
+    const valid = validate(model);
+    if (!valid) {
+      const errors = validate.errors.map((err) => ({
+        name: err.instancePath || err.dataPath || "field",
+        message: err.message
+      }));
+      throw { details: errors };
+    }
+  };
 }
 
-// Create the JSONSchemaBridge using the imported schema.
-const schemaBridge = new JSONSchemaBridge(schema, validator);
-
-function App() {
-  const [activeView, setActiveView] = useState("home");
+// A generic form component for a given module.
+function ModuleForm({ moduleConfig }) {
   const [responseMessage, setResponseMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleCreateWidget = async (data) => {
+  // Create the JSONSchemaBridge for this module using the generic validator.
+  const validatorFn = makeValidator(moduleConfig.schema);
+  const schemaBridge = new JSONSchemaBridge(moduleConfig.schema, validatorFn);
+
+  const handleSubmit = async (data) => {
     // Clear previous messages.
     setResponseMessage("");
     setErrorMessage("");
 
     try {
-      const response = await fetch("/create-widget", {
+      const response = await fetch(moduleConfig.endpoint, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        // Send only the "name" field in the payload.
-        body: JSON.stringify({ name: data.name }),
+        // Send the data as JSON.
+        body: JSON.stringify(data)
       });
 
       if (!response.ok) {
@@ -48,10 +52,34 @@ function App() {
       const result = await response.json();
       setResponseMessage(result.message);
     } catch (error) {
-      console.error("Error creating widget:", error);
+      console.error(`Error in module ${moduleConfig.id}:`, error);
       setErrorMessage("Failed to create");
     }
   };
+
+  return (
+    <div>
+      <h2>{moduleConfig.label}</h2>
+      <AutoForm schema={schemaBridge} onSubmit={handleSubmit}>
+        {/* Let Uniforms generate the form fields automatically */}
+        <SubmitField value="Submit" className="btn btn-primary" />
+        <ErrorsField />
+      </AutoForm>
+      {responseMessage && (
+        <div className="alert alert-success mt-3">{responseMessage}</div>
+      )}
+      {errorMessage && (
+        <div className="alert alert-danger mt-3">{errorMessage}</div>
+      )}
+    </div>
+  );
+}
+
+function App() {
+  const [activeModuleId, setActiveModuleId] = useState(modules[0].id);
+
+  // Find the active module from the configuration.
+  const activeModule = modules.find((mod) => mod.id === activeModuleId);
 
   return (
     <div className="container-fluid">
@@ -59,39 +87,22 @@ function App() {
         {/* Sidebar */}
         <nav className="col-md-2 d-none d-md-block bg-light sidebar">
           <ul className="nav flex-column">
-            <li className="nav-item">
-              <button
-                className="nav-link btn btn-link"
-                onClick={() => setActiveView("createWidget")}
-              >
-                Create Widget
-              </button>
-            </li>
+            {modules.map((mod) => (
+              <li key={mod.id} className="nav-item">
+                <button
+                  className={`nav-link btn btn-link ${activeModuleId === mod.id ? "active" : ""}`}
+                  onClick={() => setActiveModuleId(mod.id)}
+                >
+                  {mod.label}
+                </button>
+              </li>
+            ))}
           </ul>
         </nav>
         {/* Main Content */}
         <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-          {activeView === "createWidget" ? (
-            <div>
-              <h2>Create Widget</h2>
-              <AutoForm schema={schemaBridge} onSubmit={handleCreateWidget}>
-                <TextField name="name" />
-                <ErrorsField />
-                <SubmitField value="Create" className="btn btn-primary" />
-              </AutoForm>
-              {/* Render the success message if available */}
-              {responseMessage && (
-                <div className="alert alert-success mt-3">
-                  {responseMessage}
-                </div>
-              )}
-              {/* Render an error message if available */}
-              {errorMessage && (
-                <div className="alert alert-danger mt-3">
-                  {errorMessage}
-                </div>
-              )}
-            </div>
+          {activeModule ? (
+            <ModuleForm moduleConfig={activeModule} />
           ) : (
             <div>
               <h2>Welcome</h2>
