@@ -1,0 +1,63 @@
+{
+  "id": "signUp",
+  "label": "Sign Up",
+  "schema": {
+    "title": "Sign Up",
+    "type": "object",
+    "properties": {
+      "firstName": {
+        "type": "string",
+        "title": "First Name",
+        "maxLength": 50
+      },
+      "lastName": {
+        "type": "string",
+        "title": "Last Name",
+        "maxLength": 50
+      },
+      "email": {
+        "type": "string",
+        "title": "Email",
+        "maxLength": 50
+      },
+      "address": {
+        "type": "string",
+        "title": "Street Address"
+      },
+      "city": {
+        "type": "string",
+        "title": "City"
+      },
+      "state": {
+        "type": "string",
+        "title": "State",
+        "maxLength": 2
+      },
+      "zip": {
+        "type": "string",
+        "title": "ZIP Code",
+        "maxLength": 5,
+        "pattern": "^[0-9]{5}$"
+      }
+    },
+    "required": ["firstName", "lastName", "email", "address", "city", "state", "zip"]
+  },
+  "meta": {
+    "validateAddressEndpoint": "/validate-address",
+    "signupEndpoint": "/sign-up",
+    "validateLabel": "Validate Address",
+    "submitLabel": "Sign Up",
+    "requestMapping": {
+      "firstName": "firstName",
+      "lastName": "lastName",
+      "email": "email",
+      "address": "address",
+      "city": "city",
+      "state": "state",
+      "zip": "zip"
+    },
+    "responseMapping": {
+      "message": "message"
+    }
+  }
+}
